@@ -1,0 +1,33 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Installa i moduli EduWISP da cui dipende
+        env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          for repo in eduwisp-users; do
+            ref=main
+            if git ls-remote --exit-code --heads "https://github.com/EduWISP/$repo" "$BRANCH" >/dev/null; then
+              ref="$BRANCH"
+            fi
+            pip install "git+https://github.com/EduWISP/$repo@$ref"
+          done
+      - run: pip install -e ".[test]" ruff
+      - run: ruff check . && ruff format --check .
+      - run: python -m django makemigrations --check --dry-run --settings=tests.settings --pythonpath=.
+      - run: pytest -q

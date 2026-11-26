@@ -6,7 +6,7 @@
 
 Istituti, plessi, classi, gruppi didattici, docenti, studenti e assegnazione dei dispositivi.
 
-> 🚧 **Stato: progettazione.** Questo repository non contiene ancora codice. La progettazione è nella [documentazione EduWISP](https://eduwisp.github.io/docs/moduli/gestione-scolastica/).
+> 🧪 **Stato: prototipo v0.** Struttura scolastica: plessi, sezioni, anni scolastici, classi, studenti e incarichi dei docenti. La progettazione è nella [documentazione EduWISP](https://eduwisp.github.io/docs/moduli/gestione-scolastica/).
 
 🇬🇧 *Schools, sites, classes, teaching groups, teachers, students and device assignment. **Status: design phase**, no code yet. See the [design docs](https://eduwisp.github.io/docs/en/modules/school-management/).*
 
@@ -15,6 +15,21 @@ Istituti, plessi, classi, gruppi didattici, docenti, studenti e assegnazione dei
 - Progettazione / Design: <https://eduwisp.github.io/docs/moduli/gestione-scolastica/>
 - Mappa dei repository / Repository map: <https://eduwisp.github.io/docs/architettura/repository/>
 - Documentazione del modulo / Module docs: [`docs/user/`](docs/user/) · [`docs/developer/`](docs/developer/)
+
+## Cosa contiene il prototipo / What the prototype contains
+
+- **Plessi** con il proprio ordine di scuola: infanzia (per sezioni), primaria (5 anni), secondaria di primo grado (**3 anni**), secondaria di secondo grado (**5 anni**).
+- **Sezioni** e **indirizzi** definiti liberamente da ogni istituto e da ogni plesso.
+- **Anni scolastici** e **classi** (anno + sezione, per esempio 2ª B), con controllo della durata dell'ordine di scuola.
+- **Studenti** con i soli dati necessari, **iscritti** a una classe per anno.
+- **Incarichi dei docenti**: su una **sezione intera** (tutte le sue classi) o su una **singola classe**. Un docente può avere più classi e sezioni, una classe più docenti. Per il sostegno non si registra l'abbinamento al singolo studente (RC-013).
+- `queries.classes_for_teacher()`: le classi del docente nell'anno in corso, usata dagli altri moduli per limitare le sue azioni (RF-010).
+- Nessun collegamento è possibile tra dati di istituti diversi.
+
+```bash
+pip install -e ../eduwisp-users -e ".[test]"
+pytest
+```
 
 ## Dipendenze / Dependencies
 
