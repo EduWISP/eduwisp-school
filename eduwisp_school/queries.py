@@ -3,6 +3,7 @@
 """Interrogazioni riutilizzabili dagli altri moduli (per esempio eduwisp-devices)."""
 
 from django.db.models import Q
+from django.utils import timezone
 
 from .models import SchoolClass, Student, TeachingAssignment
 
@@ -27,14 +28,29 @@ def classes_for_teacher(user, school_year=None):
     return SchoolClass.objects.filter(condition).distinct()
 
 
-def students_for_guardian(user):
-    """Figli della persona nell'anno scolastico in corso (ADR-0018).
+def linked_students(user):
+    """Studenti a cui la persona è collegata, iscritti nell'anno in corso (ADR-0018).
 
-    Solo collegamenti attivi e solo studenti iscritti a una classe dell'anno in corso:
-    quando lo studente lascia l'istituto l'accesso termina.
+    Comprende i maggiorenni che non hanno consentito l'accesso: serve solo per dire ai
+    familiari che lo studente è maggiorenne, mai per mostrarne i dati.
     """
     return Student.objects.filter(
         guardians__user=user,
         guardians__is_active=True,
         enrollments__school_class__school_year__is_current=True,
     ).distinct()
+
+
+def adult_without_consent(today=None):
+    today = today or timezone.localdate()
+    return Q(adult_on__lte=today) & ~Q(family_access_granted=True)
+
+
+def students_for_guardian(user, today=None):
+    """Figli di cui la persona può vedere i dati (ADR-0018).
+
+    Solo collegamenti attivi e studenti iscritti nell'anno in corso: quando lo studente
+    lascia l'istituto l'accesso termina. Dalla maggiore età l'accesso è chiuso, salvo
+    consenso dello studente dal proprio tablet.
+    """
+    return linked_students(user).exclude(adult_without_consent(today))

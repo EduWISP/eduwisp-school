@@ -8,6 +8,7 @@ Documento vivo: va aggiornato a ogni modifica che riguarda dati personali. Rifer
 - Appartenenza di studenti e docenti a classi e gruppi.
 - Assegnazioni dei dispositivi.
 - **Familiari** (ADR-0018): collegamento tra genitore, tutore o affidatario e studente, con tipo di relazione, referente, accesso attivo e data di verifica. Al massimo due collegamenti attivi per studente. Se un collegamento viene disattivato (per esempio per un provvedimento del giudice) **non si registra il motivo**.
+- **Maggiore età** (ADR-0018): si registra solo la data in cui lo studente diventa maggiorenne, non la data di nascita. Da quel giorno i familiari perdono l'accesso, salvo consenso dello studente dal proprio tablet (scelta e data della scelta).
 
 ## Da definire prima dello sviluppo
 
@@ -22,4 +23,5 @@ Documento vivo: va aggiornato a ogni modifica che riguarda dati personali. Rifer
 - *School organisational structure.*
 - *Student and teacher membership of classes and groups.*
 - *Device assignments.*
+- *Adult students: only the date of majority is stored (not the birth date); families lose access unless the student consents on their tablet.*
 - *Family links (ADR-0018): parent, guardian or foster carer to student, at most two active per student; the reason for disabling a link is never stored.*
