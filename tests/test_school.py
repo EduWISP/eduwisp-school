@@ -196,8 +196,8 @@ def test_familiari_perdono_l_accesso_con_la_maggiore_eta(scuola, anno, sezione):
 
     from eduwisp_school.queries import linked_students
 
-    a5 = classe(scuola, anno, sezione("A"), 5)
-    figlio = studente_iscritto(scuola, a5, "Figlio")
+    a3 = classe(scuola, anno, sezione("A"), 3)
+    figlio = studente_iscritto(scuola, a3, "Figlio")
     madre = get_user_model().objects.create_user("madre")
     familiare(scuola, madre, figlio, is_primary=True)
     figlio.adult_on = date(2027, 3, 1)
