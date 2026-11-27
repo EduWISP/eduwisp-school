@@ -200,7 +200,7 @@ def test_familiari_perdono_l_accesso_con_la_maggiore_eta(scuola, anno, sezione):
     figlio = studente_iscritto(scuola, a3, "Figlio")
     madre = get_user_model().objects.create_user("madre")
     familiare(scuola, madre, figlio, is_primary=True)
-    figlio.adult_on = date(2027, 3, 1)
+    figlio.birth_date = date(2009, 3, 1)  # maggiorenne dal 1° marzo 2027
     figlio.save()
     assert list(students_for_guardian(madre, today=date(2027, 2, 28))) == [figlio]
     # Dalla maggiore età: accesso chiuso finché lo studente non sceglie
@@ -223,3 +223,33 @@ def test_la_scuola_non_cambia_la_scelta_dello_studente():
 
     ro = admin.site._registry[S].readonly_fields
     assert "family_access_granted" in ro and "family_access_decided_at" in ro
+
+
+def test_eta_dalla_data_di_nascita():
+    """L'età è di ognuno, non della classe: chi ripete l'anno può essere già maggiorenne."""
+    from datetime import date
+
+    from eduwisp_school.models import Student as S
+
+    s = S(display_name="Ripetente", birth_date=date(2008, 10, 15))
+    assert s.age(today=date(2026, 10, 14)) == 17 and not s.is_adult(today=date(2026, 10, 14))
+    assert s.age(today=date(2026, 10, 15)) == 18 and s.is_adult(today=date(2026, 10, 15))
+    assert s.adult_on == date(2026, 10, 15)
+    # Nato il 29 febbraio: maggiorenne il 1° marzo negli anni non bisestili
+    b = S(display_name="Bisestile", birth_date=date(2008, 2, 29))
+    assert b.adult_on == date(2026, 3, 1)
+    assert not b.is_adult(today=date(2026, 2, 28)) and b.is_adult(today=date(2026, 3, 1))
+    assert S(display_name="Senza data").age() is None
+
+
+def test_eta_del_consenso_digitale(settings):
+    from datetime import date
+
+    from eduwisp_school.models import Student as S
+
+    s = S(display_name="Quattordicenne", birth_date=date(2012, 5, 10))
+    assert not s.has_digital_consent_age(today=date(2026, 5, 9))
+    assert s.has_digital_consent_age(today=date(2026, 5, 10))
+    settings.EDUWISP_DIGITAL_CONSENT_AGE = 16  # altri Stati UE (art. 8 GDPR)
+    assert not s.has_digital_consent_age(today=date(2026, 5, 10))
+    assert S(display_name="Senza data").has_digital_consent_age() is None

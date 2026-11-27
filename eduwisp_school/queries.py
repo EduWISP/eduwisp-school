@@ -5,7 +5,7 @@
 from django.db.models import Q
 from django.utils import timezone
 
-from .models import SchoolClass, Student, TeachingAssignment
+from .models import ADULT_AGE, SchoolClass, Student, TeachingAssignment, born_by
 
 
 def classes_for_teacher(user, school_year=None):
@@ -43,7 +43,7 @@ def linked_students(user):
 
 def adult_without_consent(today=None):
     today = today or timezone.localdate()
-    return Q(adult_on__lte=today) & ~Q(family_access_granted=True)
+    return Q(birth_date__lte=born_by(today, ADULT_AGE)) & ~Q(family_access_granted=True)
 
 
 def students_for_guardian(user, today=None):
