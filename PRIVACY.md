@@ -8,7 +8,7 @@ Documento vivo: va aggiornato a ogni modifica che riguarda dati personali. Rifer
 - Appartenenza di studenti e docenti a classi e gruppi.
 - Assegnazioni dei dispositivi.
 - **Familiari** (ADR-0018): collegamento tra genitore, tutore o affidatario e studente, con tipo di relazione, referente, accesso attivo e data di verifica. Al massimo due collegamenti attivi per studente. Se un collegamento viene disattivato (per esempio per un provvedimento del giudice) **non si registra il motivo**.
-- **Maggiore età** (ADR-0018): si registra solo la data in cui lo studente diventa maggiorenne, non la data di nascita. Da quel giorno i familiari perdono l'accesso, salvo consenso dello studente dal proprio tablet (scelta e data della scelta).
+- **Data di nascita** (ADR-0018): serve per l'età di ciascuno studente, che non dipende dalla classe (chi ripete l'anno può essere più grande dei compagni). Se ne ricavano solo le soglie di legge: **14 anni** per il consenso digitale (art. 2-quinquies del Codice privacy; L. 132/2025 per l'IA; configurabile con `EDUWISP_DIGITAL_CONSENT_AGE`, 16 negli Stati che seguono l'art. 8 del GDPR) e **18 anni** per la maggiore età. Dalla maggiore età i familiari perdono l'accesso, salvo consenso dello studente dal proprio tablet (scelta e data della scelta). La data di nascita non è mostrata a docenti e famiglie nelle app.
 
 ## Da definire prima dello sviluppo
 

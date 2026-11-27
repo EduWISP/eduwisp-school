@@ -162,6 +162,34 @@ class SchoolClass(OrganizationOwned):
             )
 
 
+ADULT_AGE = 18
+
+
+def digital_consent_age():
+    """Età del consenso digitale: 14 in Italia (art. 2-quinquies del Codice privacy, e
+    art. 4 della L. 132/2025 per l'IA); il GDPR (art. 8) prevede 16 dove lo Stato non ha
+    scelto diversamente. Configurabile con EDUWISP_DIGITAL_CONSENT_AGE."""
+    from django.conf import settings
+
+    return int(getattr(settings, "EDUWISP_DIGITAL_CONSENT_AGE", 14))
+
+
+def born_by(today, years):
+    """Ultima data di nascita di chi oggi ha almeno `years` anni."""
+    try:
+        return today.replace(year=today.year - years)
+    except ValueError:  # 29 febbraio
+        return today.replace(year=today.year - years, day=28)
+
+
+def turns_age_on(birth_date, years):
+    """Giorno in cui chi è nato in `birth_date` compie `years` anni."""
+    try:
+        return birth_date.replace(year=birth_date.year + years)
+    except ValueError:  # nato il 29 febbraio, anno non bisestile
+        return birth_date.replace(year=birth_date.year + years, month=3, day=1)
+
+
 class Student(OrganizationOwned):
     """Studente. Solo i dati necessari alla gestione dei dispositivi (RC-002)."""
 
@@ -169,11 +197,12 @@ class Student(OrganizationOwned):
     internal_code = models.CharField(
         "codice interno della scuola", max_length=50, blank=True, help_text="facoltativo"
     )
-    adult_on = models.DateField(
-        "maggiorenne dal",
+    birth_date = models.DateField(
+        "data di nascita",
         null=True,
         blank=True,
-        help_text="solo la data della maggiore età, non la data di nascita (ADR-0018)",
+        help_text="serve per l'età di ognuno (anche chi ripete l'anno): maggiore età e "
+        "14 anni del consenso digitale (ADR-0018)",
     )
     family_access_granted = models.BooleanField(
         "accesso dei familiari consentito dallo studente",
@@ -191,9 +220,29 @@ class Student(OrganizationOwned):
     def __str__(self):
         return self.display_name
 
+    def age(self, today=None):
+        """Età compiuta, oppure None se la data di nascita manca."""
+        if self.birth_date is None:
+            return None
+        today = today or timezone.localdate()
+        n = today.year - self.birth_date.year
+        return n - ((today.month, today.day) < (self.birth_date.month, self.birth_date.day))
+
+    @property
+    def adult_on(self):
+        """Giorno della maggiore età (per chi è nato il 29 febbraio: il 1° marzo)."""
+        return turns_age_on(self.birth_date, ADULT_AGE) if self.birth_date else None
+
+    def has_digital_consent_age(self, today=None):
+        """Ha l'età per acconsentire da sé ai servizi online (vuoto se manca la data)."""
+        if self.birth_date is None:
+            return None
+        today = today or timezone.localdate()
+        return self.birth_date <= born_by(today, digital_consent_age())
+
     def is_adult(self, today=None):
         today = today or timezone.localdate()
-        return self.adult_on is not None and self.adult_on <= today
+        return self.birth_date is not None and self.birth_date <= born_by(today, ADULT_AGE)
 
     def family_access_open(self, today=None):
         """I familiari vedono i dati se lo studente è minorenne o se l'ha consentito."""
