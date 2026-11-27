@@ -89,7 +89,9 @@ class GuardianInline(OrganizationScopedAdminMixin, admin.TabularInline):
 
 @admin.register(models.Student)
 class StudentAdmin(ScopedAdmin):
-    list_display = ["display_name", "internal_code", "organization"]
+    list_display = ["display_name", "internal_code", "adult_on", "organization"]
+    # La scelta sull'accesso dei familiari è dello studente maggiorenne (dal tablet, ADR-0018).
+    readonly_fields = ["family_access_granted", "family_access_decided_at"]
     search_fields = ["display_name", "internal_code"]
     inlines = [StudentEnrollmentInline, GuardianInline]
 

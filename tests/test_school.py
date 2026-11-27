@@ -189,3 +189,37 @@ def test_familiare_dello_stesso_istituto(scuola, altra_scuola, anno, sezione):
     g = Guardian(organization=altra_scuola, user=madre, student=figlio, is_primary=True)
     with pytest.raises(ValidationError):
         g.full_clean()
+
+
+def test_familiari_perdono_l_accesso_con_la_maggiore_eta(scuola, anno, sezione):
+    from datetime import date
+
+    from eduwisp_school.queries import linked_students
+
+    a3 = classe(scuola, anno, sezione("A"), 3)
+    figlio = studente_iscritto(scuola, a3, "Figlio")
+    madre = get_user_model().objects.create_user("madre")
+    familiare(scuola, madre, figlio, is_primary=True)
+    figlio.adult_on = date(2027, 3, 1)
+    figlio.save()
+    assert list(students_for_guardian(madre, today=date(2027, 2, 28))) == [figlio]
+    # Dalla maggiore età: accesso chiuso finché lo studente non sceglie
+    assert list(students_for_guardian(madre, today=date(2027, 3, 1))) == []
+    assert list(linked_students(madre)) == [figlio]
+    figlio.family_access_granted = True
+    figlio.save()
+    assert list(students_for_guardian(madre, today=date(2027, 3, 1))) == [figlio]
+    figlio.family_access_granted = False
+    figlio.save()
+    assert list(students_for_guardian(madre, today=date(2027, 3, 1))) == []
+    assert not figlio.family_access_open(today=date(2027, 3, 1))
+    assert figlio.family_access_open(today=date(2027, 2, 1))
+
+
+def test_la_scuola_non_cambia_la_scelta_dello_studente():
+    from django.contrib import admin
+
+    from eduwisp_school.models import Student as S
+
+    ro = admin.site._registry[S].readonly_fields
+    assert "family_access_granted" in ro and "family_access_decided_at" in ro

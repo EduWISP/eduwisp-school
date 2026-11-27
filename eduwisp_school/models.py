@@ -9,6 +9,7 @@ sezioni, indirizzi e plessi li definisce ogni istituto (RF-005, RF-006).
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils import timezone
 from eduwisp_users.models import OrganizationOwned
 
 
@@ -168,6 +169,19 @@ class Student(OrganizationOwned):
     internal_code = models.CharField(
         "codice interno della scuola", max_length=50, blank=True, help_text="facoltativo"
     )
+    adult_on = models.DateField(
+        "maggiorenne dal",
+        null=True,
+        blank=True,
+        help_text="solo la data della maggiore età, non la data di nascita (ADR-0018)",
+    )
+    family_access_granted = models.BooleanField(
+        "accesso dei familiari consentito dallo studente",
+        null=True,
+        blank=True,
+        help_text="scelta dello studente maggiorenne dal tablet; vuoto = non ancora scelto",
+    )
+    family_access_decided_at = models.DateTimeField("scelta fatta il", null=True, blank=True)
 
     class Meta:
         verbose_name = "studente"
@@ -176,6 +190,14 @@ class Student(OrganizationOwned):
 
     def __str__(self):
         return self.display_name
+
+    def is_adult(self, today=None):
+        today = today or timezone.localdate()
+        return self.adult_on is not None and self.adult_on <= today
+
+    def family_access_open(self, today=None):
+        """I familiari vedono i dati se lo studente è minorenne o se l'ha consentito."""
+        return not self.is_adult(today) or self.family_access_granted is True
 
 
 class StudentEnrollment(OrganizationOwned):
