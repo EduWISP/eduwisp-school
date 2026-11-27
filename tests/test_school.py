@@ -214,3 +214,12 @@ def test_familiari_perdono_l_accesso_con_la_maggiore_eta(scuola, anno, sezione):
     assert list(students_for_guardian(madre, today=date(2027, 3, 1))) == []
     assert not figlio.family_access_open(today=date(2027, 3, 1))
     assert figlio.family_access_open(today=date(2027, 2, 1))
+
+
+def test_la_scuola_non_cambia_la_scelta_dello_studente():
+    from django.contrib import admin
+
+    from eduwisp_school.models import Student as S
+
+    ro = admin.site._registry[S].readonly_fields
+    assert "family_access_granted" in ro and "family_access_decided_at" in ro
