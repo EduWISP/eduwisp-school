@@ -3,7 +3,7 @@ publiccodeYmlVersion: "0"
 
 name: eduwisp-school
 url: "https://github.com/EduWISP/eduwisp-school"
-landingURL: "https://eduwisp.github.io/docs/moduli/gestione-scolastica/"
+landingURL: "https://eduwisp.org/docs/moduli/gestione-scolastica/"
 platforms:
   - web
   - linux
@@ -23,14 +23,14 @@ intendedAudience:
 description:
   it:
     shortDescription: "EduWISP — Gestione scolastica"
-    longDescription: "Istituti, plessi, classi, gruppi didattici, docenti, studenti e assegnazione dei dispositivi. Fa parte di EduWISP, piattaforma open source e gratuita per la gestione dei dispositivi digitali di proprietà delle scuole, con MDM, gestione scolastica, Family Control e prevenzione del cyberbullismo. Il progetto è in fase di progettazione e rispetta come vincolo bloccante il GDPR e la normativa italiana su privacy e minori. Documentazione: https://eduwisp.github.io/docs/"
-    documentation: "https://eduwisp.github.io/docs/"
+    longDescription: "Istituti, plessi, classi, gruppi didattici, docenti, studenti e assegnazione dei dispositivi. Fa parte di EduWISP, piattaforma open source e gratuita per la gestione dei dispositivi digitali di proprietà delle scuole, con MDM, gestione scolastica, Family Control e prevenzione del cyberbullismo. Il progetto è in fase di progettazione e rispetta come vincolo bloccante il GDPR e la normativa italiana su privacy e minori. Documentazione: https://eduwisp.org/docs/"
+    documentation: "https://eduwisp.org/docs/"
     features:
       - "Gestione scolastica"
   en:
     shortDescription: "EduWISP — School management"
-    longDescription: "Schools, sites, classes, teaching groups, teachers, students and device assignment. Part of EduWISP, a free and open-source platform to manage school-owned digital devices, with MDM, school management, family control and cyberbullying prevention. The project is in the design phase and treats GDPR and Italian law on privacy and minors as a blocking constraint. Documentation: https://eduwisp.github.io/docs/en/"
-    documentation: "https://eduwisp.github.io/docs/en/"
+    longDescription: "Schools, sites, classes, teaching groups, teachers, students and device assignment. Part of EduWISP, a free and open-source platform to manage school-owned digital devices, with MDM, school management, family control and cyberbullying prevention. The project is in the design phase and treats GDPR and Italian law on privacy and minors as a blocking constraint. Documentation: https://eduwisp.org/docs/en/"
+    documentation: "https://eduwisp.org/docs/en/"
     features:
       - "School management"
 
