@@ -4,7 +4,7 @@
 
 from django.db.models import Q
 
-from .models import SchoolClass, TeachingAssignment
+from .models import SchoolClass, Student, TeachingAssignment
 
 
 def classes_for_teacher(user, school_year=None):
@@ -25,3 +25,16 @@ def classes_for_teacher(user, school_year=None):
         else:
             condition |= Q(section_id=a.section_id, school_year_id=a.school_year_id)
     return SchoolClass.objects.filter(condition).distinct()
+
+
+def students_for_guardian(user):
+    """Figli della persona nell'anno scolastico in corso (ADR-0018).
+
+    Solo collegamenti attivi e solo studenti iscritti a una classe dell'anno in corso:
+    quando lo studente lascia l'istituto l'accesso termina.
+    """
+    return Student.objects.filter(
+        guardians__user=user,
+        guardians__is_active=True,
+        enrollments__school_class__school_year__is_current=True,
+    ).distinct()

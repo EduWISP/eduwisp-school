@@ -5,6 +5,8 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 
 from eduwisp_school.models import (
+    Guardian,
+    GuardianKind,
     SchoolClass,
     SchoolLevel,
     Section,
@@ -13,7 +15,7 @@ from eduwisp_school.models import (
     StudentEnrollment,
     TeachingAssignment,
 )
-from eduwisp_school.queries import classes_for_teacher
+from eduwisp_school.queries import classes_for_teacher, students_for_guardian
 
 pytestmark = pytest.mark.django_db
 
@@ -116,3 +118,74 @@ def test_classe_dell_incarico_coerente_con_la_sezione(scuola, anno, sezione):
     )
     with pytest.raises(ValidationError):
         incarico.full_clean()
+
+
+def familiare(scuola, persona, studente, **campi):
+    g = Guardian(organization=scuola, user=persona, student=studente, **campi)
+    g.full_clean()
+    g.save()
+    return g
+
+
+def studente_iscritto(scuola, classe_, nome):
+    s = Student.objects.create(organization=scuola, display_name=nome)
+    StudentEnrollment.objects.create(organization=scuola, student=s, school_class=classe_)
+    return s
+
+
+def test_famiglia_vede_solo_i_propri_figli(scuola, anno, sezione):
+    a1 = classe(scuola, anno, sezione("A"), 1)
+    figlio, fratello, altro = (studente_iscritto(scuola, a1, n) for n in ("Uno", "Due", "Tre"))
+    madre = get_user_model().objects.create_user("madre")
+    familiare(scuola, madre, figlio, is_primary=True)
+    familiare(scuola, madre, fratello, is_primary=True)
+    assert set(students_for_guardian(madre)) == {figlio, fratello}
+    assert altro not in students_for_guardian(madre)
+
+
+def test_un_referente_e_un_secondo_facoltativo(scuola, anno, sezione):
+    a1 = classe(scuola, anno, sezione("A"), 1)
+    figlio = studente_iscritto(scuola, a1, "Figlio")
+    utenti = get_user_model().objects
+    madre, padre, terzo = (utenti.create_user(n) for n in ("madre", "padre", "terzo"))
+    familiare(scuola, madre, figlio, is_primary=True)
+    assert list(students_for_guardian(madre)) == [figlio]
+    familiare(scuola, padre, figlio)
+    assert list(students_for_guardian(padre)) == [figlio]
+    with pytest.raises(ValidationError):
+        familiare(scuola, terzo, figlio, kind=GuardianKind.AFFIDATARIO)
+    with pytest.raises(ValidationError):
+        Guardian(organization=scuola, user=padre, student=figlio, is_primary=True).full_clean()
+
+
+def test_collegamento_disattivato_non_da_accesso(scuola, anno, sezione):
+    a1 = classe(scuola, anno, sezione("A"), 1)
+    figlio = studente_iscritto(scuola, a1, "Figlio")
+    utenti = get_user_model().objects
+    madre, padre, tutore = (utenti.create_user(n) for n in ("madre", "padre", "tutore"))
+    familiare(scuola, madre, figlio, is_primary=True)
+    g = familiare(scuola, padre, figlio)
+    g.is_active = False
+    g.full_clean()
+    g.save()
+    assert list(students_for_guardian(padre)) == []
+    familiare(scuola, tutore, figlio, kind=GuardianKind.TUTORE)
+    assert list(students_for_guardian(tutore)) == [figlio]
+
+
+def test_accesso_solo_con_iscrizione_nell_anno_in_corso(scuola, anno, sezione):
+    a1 = classe(scuola, anno, sezione("A"), 1)
+    figlio = studente_iscritto(scuola, a1, "Figlio")
+    madre = get_user_model().objects.create_user("madre")
+    familiare(scuola, madre, figlio, is_primary=True)
+    anno.is_current = False
+    anno.save()
+    assert list(students_for_guardian(madre)) == []
+
+
+def test_familiare_dello_stesso_istituto(scuola, altra_scuola, anno, sezione):
+    figlio = Student.objects.create(organization=scuola, display_name="Figlio")
+    madre = get_user_model().objects.create_user("madre")
+    g = Guardian(organization=altra_scuola, user=madre, student=figlio, is_primary=True)
+    with pytest.raises(ValidationError):
+        g.full_clean()

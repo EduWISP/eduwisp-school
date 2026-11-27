@@ -263,3 +263,73 @@ class TeachingAssignment(OrganizationOwned):
                 raise ValidationError({"school_class": "La classe deve essere della sezione."})
             if self.school_class.school_year_id != self.school_year_id:
                 raise ValidationError({"school_class": "La classe deve essere dello stesso anno."})
+
+
+class GuardianKind(models.TextChoices):
+    GENITORE = "genitore", "genitore"
+    TUTORE = "tutore", "tutore"
+    AFFIDATARIO = "affidatario", "affidatario"
+
+
+MAX_ACTIVE_GUARDIANS = 2
+
+
+class Guardian(OrganizationOwned):
+    """Collegamento tra una persona con responsabilità e uno studente (ADR-0018).
+
+    Per ogni studente: almeno un collegamento (il referente) e al massimo due attivi,
+    con gli stessi diritti di consultazione. «Referente» indica solo chi riceve per primo
+    le comunicazioni. Un collegamento disattivato (per esempio per un provvedimento del
+    giudice) non dà accesso; il motivo non si registra.
+    """
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="guardianships",
+        verbose_name="persona",
+    )
+    student = models.ForeignKey(
+        Student, on_delete=models.CASCADE, related_name="guardians", verbose_name="studente"
+    )
+    kind = models.CharField(
+        "relazione", max_length=20, choices=GuardianKind.choices, default=GuardianKind.GENITORE
+    )
+    is_primary = models.BooleanField(
+        "referente", default=False, help_text="riceve per primo le comunicazioni"
+    )
+    is_active = models.BooleanField("accesso attivo", default=True)
+    verified_at = models.DateTimeField(
+        "relazione verificata il", null=True, blank=True, help_text="RF-020"
+    )
+    same_organization_fields = ("student",)
+
+    class Meta:
+        verbose_name = "familiare"
+        verbose_name_plural = "familiari"
+        constraints = [
+            models.UniqueConstraint(fields=["user", "student"], name="familiare_unico"),
+            models.UniqueConstraint(
+                fields=["student"],
+                condition=models.Q(is_primary=True),
+                name="un_solo_referente",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.user} — {self.student} ({self.get_kind_display()})"
+
+    def clean(self):
+        super().clean()
+        if not self.student_id:
+            return
+        if self.is_primary and not self.is_active:
+            raise ValidationError({"is_active": "Il referente deve avere l'accesso attivo."})
+        if self.is_active:
+            attivi = Guardian.objects.filter(student=self.student, is_active=True).exclude(
+                pk=self.pk
+            )
+            if attivi.count() >= MAX_ACTIVE_GUARDIANS:
+                raise ValidationError(
+                    f"Lo studente ha già {MAX_ACTIVE_GUARDIANS} familiari con accesso attivo."
+                )

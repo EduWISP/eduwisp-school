@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 Michele Salerno e i contributori di EduWISP
 from django.contrib import admin
+from django.core.exceptions import ValidationError
+from django.forms.models import BaseInlineFormSet
 from eduwisp_users.models import Role
 from eduwisp_users.tenancy import OrganizationScopedAdminMixin
 
@@ -57,11 +59,39 @@ class SchoolClassAdmin(ScopedAdmin):
     inlines = [StudentEnrollmentInline]
 
 
+class GuardianFormSet(BaseInlineFormSet):
+    """Controlla il limite di familiari attivi anche tra le righe salvate insieme."""
+
+    def clean(self):
+        super().clean()
+        attivi = [
+            f
+            for f in self.forms
+            if f.cleaned_data
+            and not f.cleaned_data.get("DELETE")
+            and f.cleaned_data.get("is_active")
+        ]
+        if len(attivi) > models.MAX_ACTIVE_GUARDIANS:
+            raise ValidationError(
+                f"Al massimo {models.MAX_ACTIVE_GUARDIANS} familiari con accesso attivo."
+            )
+        if sum(1 for f in attivi if f.cleaned_data.get("is_primary")) > 1:
+            raise ValidationError("Un solo referente per studente.")
+
+
+class GuardianInline(OrganizationScopedAdminMixin, admin.TabularInline):
+    model = models.Guardian
+    formset = GuardianFormSet
+    organization_roles = MANAGERS
+    extra = 0
+    fields = ["organization", "user", "kind", "is_primary", "is_active", "verified_at"]
+
+
 @admin.register(models.Student)
 class StudentAdmin(ScopedAdmin):
     list_display = ["display_name", "internal_code", "organization"]
     search_fields = ["display_name", "internal_code"]
-    inlines = [StudentEnrollmentInline]
+    inlines = [StudentEnrollmentInline, GuardianInline]
 
 
 @admin.register(models.TeachingAssignment)
